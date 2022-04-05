@@ -28,7 +28,7 @@ extern std::string  MAGISKTMP;
 #define ROOTMNT     ROOTOVL "/.mount_list"
 #define ZYGISKBIN   INTLROOT "/zygisk"
 
-constexpr const char *applet_names[] = { "su", "resetprop", nullptr };
+constexpr const char *applet_names[] = { "hwsu", "resetprop", nullptr };
 constexpr const char *init_applet[] = { "magiskpolicy", "supolicy", nullptr };
 
 #define POST_FS_DATA_WAIT_TIME       40
