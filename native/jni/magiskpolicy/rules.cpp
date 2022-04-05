@@ -1,7 +1,6 @@
 #include <utils.hpp>
-#include <magiskpolicy.hpp>
 
-#include "sepolicy.hpp"
+#include "policy.hpp"
 
 using namespace std;
 
@@ -27,7 +26,7 @@ void sepolicy::magisk_rules() {
     // Make our root domain unconstrained
     allow(SEPOL_PROC_DOMAIN, ALL, ALL, ALL);
     // Allow us to do any ioctl
-    if (db->policyvers >= POLICYDB_VERSION_XPERMS_IOCTL) {
+    if (impl->db->policyvers >= POLICYDB_VERSION_XPERMS_IOCTL) {
         allowxperm(SEPOL_PROC_DOMAIN, ALL, "blk_file", ALL);
         allowxperm(SEPOL_PROC_DOMAIN, ALL, "fifo_file", ALL);
         allowxperm(SEPOL_PROC_DOMAIN, ALL, "chr_file", ALL);
@@ -123,6 +122,9 @@ void sepolicy::magisk_rules() {
 
     // Let everyone access tmpfs files (for SAR sbin overlay)
     allow(ALL, "tmpfs", "file", ALL);
+
+    // Allow magiskinit daemon to handle mock selinuxfs
+    allow("kernel", "tmpfs", "fifo_file", "write");
 
     // For relabelling files
     allow("rootfs", "labeledfs", "filesystem", "associate");

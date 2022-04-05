@@ -1,8 +1,7 @@
 #include <utils.hpp>
 #include <vector>
-#include <magiskpolicy.hpp>
 
-#include "sepolicy.hpp"
+#include "policy.hpp"
 
 using namespace std;
 
@@ -32,7 +31,7 @@ it will load from current live policies (/sys/fs/selinux/policy)
     exit(1);
 }
 
-int magiskpolicy_main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
     cmdline_logging();
     const char *out_file = nullptr;
     vector<string_view> rule_files;

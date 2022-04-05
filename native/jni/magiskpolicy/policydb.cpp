@@ -7,9 +7,8 @@
 
 #include <utils.hpp>
 #include <stream.hpp>
-#include <magiskpolicy.hpp>
 
-#include "sepolicy.hpp"
+#include "policy.hpp"
 
 #define SHALEN 64
 static bool cmp_sha256(const char *a, const char *b) {
@@ -79,6 +78,26 @@ static void load_cil(struct cil_db *db, const char *file) {
     LOGD("cil_add [%s]\n", file);
 }
 
+sepolicy *sepolicy::from_data(char *data, size_t len) {
+    LOGD("Load policy from data\n");
+
+    policy_file_t pf;
+    policy_file_init(&pf);
+    pf.data = data;
+    pf.len = len;
+    pf.type = PF_USE_MEMORY;
+
+    auto db = static_cast<policydb_t *>(xmalloc(sizeof(policydb_t)));
+    if (policydb_init(db) || policydb_read(db, &pf, 0)) {
+        LOGE("Fail to load policy from data\n");
+        free(db);
+        return nullptr;
+    }
+
+    auto sepol = new sepol_impl(db);
+    return sepol;
+}
+
 sepolicy *sepolicy::from_file(const char *file) {
     LOGD("Load policy from: %s\n", file);
 
@@ -95,8 +114,7 @@ sepolicy *sepolicy::from_file(const char *file) {
         return nullptr;
     }
 
-    auto sepol = new sepolicy();
-    sepol->db = db;
+    auto sepol = new sepol_impl(db);
     return sepol;
 }
 
@@ -195,8 +213,7 @@ sepolicy *sepolicy::compile_split() {
     if (cil_build_policydb(db, &pdb))
         return nullptr;
 
-    auto sepol = new sepolicy();
-    sepol->db = &pdb->p;
+    auto sepol = new sepol_impl(&pdb->p);
     return sepol;
 }
 
@@ -211,7 +228,7 @@ sepolicy *sepolicy::from_split() {
         return sepolicy::compile_split();
 }
 
-sepolicy::~sepolicy() {
+sepol_impl::~sepol_impl() {
     policydb_destroy(db);
     free(db);
 }
@@ -220,8 +237,8 @@ bool sepolicy::to_file(const char *file) {
     uint8_t *data;
     size_t len;
 
-    /* No partial writes are allowed to /sys/fs/selinux/load, thus the reason why we
-     * first dump everything into memory, then directly call write system call */
+    // No partial writes are allowed to /sys/fs/selinux/load, thus the reason why we
+    // first dump everything into memory, then directly call write system call
 
     auto fp = make_stream_fp<byte_stream>(data, len);
     run_finally fin([=]{ free(data); });
@@ -230,7 +247,7 @@ bool sepolicy::to_file(const char *file) {
     policy_file_init(&pf);
     pf.type = PF_USE_STDIO;
     pf.fp = fp.get();
-    if (policydb_write(db, &pf)) {
+    if (policydb_write(impl->db, &pf)) {
         LOGE("Fail to create policy image\n");
         return false;
     }
