@@ -409,25 +409,25 @@ def setup_ndk(args):
     ndk_zip = url.split('/')[-1]
 
     header(f'* Downloading {ndk_zip}')
-    with urllib.request.urlopen(url) as response, open(ndk_zip, 'wb') as out_file:
-        shutil.copyfileobj(response, out_file)
+    # with urllib.request.urlopen(url) as response, open(ndk_zip, 'wb') as out_file:
+    #     shutil.copyfileobj(response, out_file)
 
     header('* Extracting NDK zip')
-    rm_rf(ndk_path)
-    with zipfile.ZipFile(ndk_zip, 'r') as zf:
-        for info in zf.infolist():
-            vprint(f'Extracting {info.filename}')
-            if info.external_attr >> 28 == 0xA:  # symlink
-                src = zf.read(info).decode("utf-8")
-                dest = op.join(ndk_root, info.filename)
-                os.symlink(src, dest)
-                continue
-            extracted_path = zf.extract(info, ndk_root)
-            if info.create_system == 3:  # ZIP_UNIX_SYSTEM = 3
-                unix_attributes = info.external_attr >> 16
-            if unix_attributes:
-                os.chmod(extracted_path, unix_attributes)
-    mv(op.join(ndk_root, f'android-ndk-r{ndk_ver}'), ndk_path)
+    # rm_rf(ndk_path)
+    # with zipfile.ZipFile(ndk_zip, 'r') as zf:
+    #     for info in zf.infolist():
+    #         vprint(f'Extracting {info.filename}')
+    #         if info.external_attr >> 28 == 0xA:  # symlink
+    #             src = zf.read(info).decode("utf-8")
+    #             dest = op.join(ndk_root, info.filename)
+    #             os.symlink(src, dest)
+    #             continue
+    #         extracted_path = zf.extract(info, ndk_root)
+    #         if info.create_system == 3:  # ZIP_UNIX_SYSTEM = 3
+    #             unix_attributes = info.external_attr >> 16
+    #         if unix_attributes:
+    #             os.chmod(extracted_path, unix_attributes)
+    # mv(op.join(ndk_root, f'android-ndk-r{ndk_ver}'), ndk_path)
 
     header('* Patching static libs')
     for target in ['aarch64-linux-android', 'arm-linux-androideabi',
