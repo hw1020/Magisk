@@ -295,6 +295,13 @@ mount_partitions() {
 
   # Allow /system/bin commands (dalvikvm) on Android 10+ in recovery
   $BOOTMODE || mount_apex
+
+  # Mount sepolicy rules dir locations in recovery (best effort)
+  if ! $BOOTMODE; then
+    mount_name "cache cac" /cache
+    mount_name metadata /metadata
+    mount_name persist /persist
+  fi
 }
 
 # loop_setup <ext4_img>, sets LOOPDEV
@@ -413,7 +420,7 @@ get_flags() {
       PATCHVBMETAFLAG=false
     else
       PATCHVBMETAFLAG=true
-      ui_print "- Cannot find vbmeta partition, patch vbmeta in boot image"
+      ui_print "- No vbmeta partition, patch vbmeta in boot image"
     fi
   fi
   [ -z $RECOVERYMODE ] && RECOVERYMODE=false
@@ -577,16 +584,13 @@ check_data() {
 
 find_magisk_apk() {
   local DBAPK
-  [ -z $APK ] && APK=$NVBASE/magisk.apk
-  [ -f $APK ] || APK=$MAGISKBIN/magisk.apk
-  [ -f $APK ] || APK=/data/app/com.topjohnwu.magisk*/*.apk
-  [ -f $APK ] || APK=/data/app/*/com.topjohnwu.magisk*/*.apk
+  [ -z $APK ] && APK=/data/app/com.topjohnwu.magisk*/base.apk
+  [ -f $APK ] || APK=/data/app/*/com.topjohnwu.magisk*/base.apk
   if [ ! -f $APK ]; then
     DBAPK=$(magisk --sqlite "SELECT value FROM strings WHERE key='requester'" 2>/dev/null | cut -d= -f2)
     [ -z $DBAPK ] && DBAPK=$(strings $NVBASE/magisk.db | grep -oE 'requester..*' | cut -c10-)
-    [ -z $DBAPK ] || APK=/data/user_de/*/$DBAPK/dyn/*.apk
-    [ -f $APK ] || [ -z $DBAPK ] || APK=/data/app/$DBAPK*/*.apk
-    [ -f $APK ] || [ -z $DBAPK ] || APK=/data/app/*/$DBAPK*/*.apk
+    [ -z $DBAPK ] || APK=/data/user_de/0/$DBAPK/dyn/current.apk
+    [ -f $APK ] || [ -z $DBAPK ] || APK=/data/data/$DBAPK/dyn/current.apk
   fi
   [ -f $APK ] || ui_print "! Unable to detect Magisk app APK for BootSigner"
 }
@@ -654,9 +658,9 @@ copy_sepolicy_rules() {
   fi
 
   if [ -d ${RULESDIR%/magisk} ]; then
-    ui_print "- Sepolicy rules dir is ${RULESDIR%/magisk}"
+    echo "RULESDIR=$RULESDIR" >&2
   else
-    ui_print "- Sepolicy rules dir ${RULESDIR%/magisk} not found"
+    ui_print "- Unable to find sepolicy rules dir ${RULESDIR%/magisk}"
     return 1
   fi
 
@@ -813,7 +817,7 @@ install_module() {
   rm -rf \
   $MODPATH/system/placeholder $MODPATH/customize.sh \
   $MODPATH/README.md $MODPATH/.git*
-  rmdir -p $MODPATH
+  rmdir -p $MODPATH 2>/dev/null
 
   cd /
   $BOOTMODE || recovery_cleanup
@@ -835,7 +839,7 @@ NVBASE=/data/adb
 TMPDIR=/dev/tmp
 
 # Bootsigner related stuff
-BOOTSIGNERCLASS=com.topjohnwu.signing.SignBoot
+BOOTSIGNERCLASS=com.topjohnwu.magisk.signing.SignBoot
 BOOTSIGNER='/system/bin/dalvikvm -Xnoimage-dex2oat -cp $APK $BOOTSIGNERCLASS'
 BOOTSIGNED=false
 

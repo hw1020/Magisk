@@ -1,19 +1,16 @@
 # Magisk Tools
 
-Magisk comes with a huge collections of tools for installation, daemons, and utilities for developers. This documentation covers the 3 binaries and all included applets. The binaries and applets are shown below:
+Magisk comes with a huge collections of tools for installation, daemons, and utilities for developers. This documentation covers the 4 binaries and all included applets. The binaries and applets are shown below:
 
 ```
 magiskboot                 /* binary */
 magiskinit                 /* binary */
-magiskpolicy -> magiskinit
-supolicy -> magiskinit
+magiskpolicy               /* binary */
+supolicy -> magiskpolicy
 magisk                     /* binary */
-magiskhide -> magisk
 resetprop -> magisk
 su -> magisk
 ```
-
-Note: The Magisk zip you download only contains `magiskboot`, `magiskinit`, and `magiskinit64`. The binary `magisk` is compressed and embedded into `magiskinit(64)`. Push `magiskinit(64)` to your device and run `./magiskinit(64) -x magisk <path>` to extract `magisk` out of the binary.
 
 ### magiskboot
 
@@ -120,7 +117,7 @@ This binary will replace `init` in the ramdisk of a Magisk patched boot image. I
 
 (This tool is aliased to `supolicy` for compatibility with SuperSU's sepolicy tool)
 
-An applet of `magiskinit`. This tool could be used for advanced developers to modify SELinux policies. In common scenarios like Linux server admins, they would directly modify the SELinux policy sources (`*.te`) and recompile the `sepolicy` binary, but here on Android we directly patch the binary file (or runtime policies).
+This tool could be used for advanced developers to modify SELinux policies. In common scenarios like Linux server admins, they would directly modify the SELinux policy sources (`*.te`) and recompile the `sepolicy` binary, but here on Android we directly patch the binary file (or runtime policies).
 
 All processes spawned from the Magisk daemon, including root shells and all its forks, are running in the context `u:r:magisk:s0`. The rule used on all Magisk installed systems can be viewed as stock `sepolicy` with these patches: `magiskpolicy --magisk 'allow magisk * * *'`.
 

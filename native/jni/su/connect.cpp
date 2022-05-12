@@ -1,7 +1,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include <utils.hpp>
+#include <base.hpp>
 #include <selinux.hpp>
 
 #include "su.hpp"
@@ -189,7 +189,7 @@ void app_log(const su_context &ctx) {
 void app_notify(const su_context &ctx) {
     if (fork_dont_care() == 0) {
         vector<Extra> extras;
-        extras.reserve(2);
+        extras.reserve(3);
         extras.emplace_back("from.uid", ctx.info->uid);
         extras.emplace_back("pid", ctx.pid);
         extras.emplace_back("policy", ctx.info->access.policy);
@@ -210,7 +210,7 @@ int app_request(const su_context &ctx) {
 
     // Send request
     vector<Extra> extras;
-    extras.reserve(2);
+    extras.reserve(3);
     extras.emplace_back("fifo", fifo);
     extras.emplace_back("uid", ctx.info->eval_uid);
     extras.emplace_back("pid", ctx.pid);

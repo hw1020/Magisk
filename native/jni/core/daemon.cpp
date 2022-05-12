@@ -4,7 +4,7 @@
 #include <sys/mount.h>
 
 #include <magisk.hpp>
-#include <utils.hpp>
+#include <base.hpp>
 #include <daemon.hpp>
 #include <selinux.hpp>
 #include <db.hpp>
@@ -283,10 +283,7 @@ static void switch_cgroup(const char *cgroup, int pid) {
     if (fd == -1)
         return;
     snprintf(buf, sizeof(buf), "%d\n", pid);
-    if (xwrite(fd, buf, strlen(buf)) == -1) {
-        close(fd);
-        return;
-    }
+    xwrite(fd, buf, strlen(buf));
     close(fd);
 }
 
@@ -360,8 +357,7 @@ static void daemon_entry() {
             return true;
         });
     }
-    unlink("/dev/.se");
-    unlink(mount_list.data());
+    rm_rf((MAGISKTMP + "/" ROOTOVL).data());
 
     // Load config status
     auto config = MAGISKTMP + "/" INTLROOT "/config";
@@ -395,6 +391,7 @@ static void daemon_entry() {
 
     default_new(poll_map);
     default_new(poll_fds);
+    default_new(module_list);
 
     // Register handler for main socket
     pollfd main_socket_pfd = { fd, POLLIN, 0 };

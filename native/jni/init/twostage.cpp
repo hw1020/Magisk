@@ -1,7 +1,7 @@
 #include <sys/mount.h>
 
 #include <magisk.hpp>
-#include <utils.hpp>
+#include <base.hpp>
 #include <socket.hpp>
 
 #include "init.hpp"
@@ -17,7 +17,15 @@ void FirstStageInit::prepare() {
     cp_afc("/init" /* magiskinit */, REDIR_PATH);
 
     unlink("/init");
-    xrename(backup_init(), "/init");
+    const char *orig_init = backup_init();
+    if (access(orig_init, F_OK) == 0) {
+        xrename(orig_init, "/init");
+    } else {
+        // If the backup init is missing, this means that the boot ramdisk
+        // was created from scratch, and the real init is in a separate CPIO,
+        // which is guaranteed to be placed at /system/bin/init.
+        xsymlink(INIT_PATH, "/init");
+    }
 
     {
         auto init = mmap_data("/init", true);
@@ -67,6 +75,9 @@ bool SecondStageInit::prepare() {
     umount2("/init", MNT_DETACH);
     umount2("/proc/self/exe", MNT_DETACH);
     umount2("/data", MNT_DETACH);
+
+    // Make sure init dmesg logs won't get messed up
+    argv[0] = (char *) INIT_PATH;
 
     // Some weird devices like meizu, uses 2SI but still have legacy rootfs
     // Check if root and system are on the same filesystem
